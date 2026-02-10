@@ -20,7 +20,7 @@ public class Herramienta {
     @Column(name = "precio_dia")
     private BigDecimal precioDia;
 
-    private boolean disponible;
+    private Boolean disponible;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "proveedor_id")

@@ -9,23 +9,35 @@ import java.time.LocalDate;
 @Table(name = "reservas")
 @Getter @Setter
 @NoArgsConstructor @AllArgsConstructor
+@Builder // Útil para crear objetos rápidamente en las pruebas
 public class Reserva {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = false)
     private LocalDate fechaInicio;
+
+    @Column(nullable = false)
     private LocalDate fechaFin;
+
+    // Usamos precision y scale para manejar dinero correctamente (10 dígitos, 2 decimales)
+    @Column(precision = 10, scale = 2)
     private BigDecimal total;
 
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private EstadoReserva estado;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "cliente_id")
+    // Relación con el Usuario (quien alquila)
+    // El nombre de la columna en MySQL será 'cliente_id'
+    @ManyToOne(fetch = FetchType.EAGER) // EAGER para que cargue los datos del cliente al buscar la reserva
+    @JoinColumn(name = "cliente_id", nullable = false)
     private Usuario cliente;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "herramienta_id")
+    // Relación con la Herramienta (qué se alquila)
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "herramienta_id", nullable = false)
     private Herramienta herramienta;
 }
