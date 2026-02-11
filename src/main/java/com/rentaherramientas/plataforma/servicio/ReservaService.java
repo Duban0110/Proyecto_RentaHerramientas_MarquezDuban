@@ -18,10 +18,8 @@ public class ReservaService {
 
     @Autowired
     private ReservaRepositorio reservaRepositorio;
-
     @Autowired
     private HerramientaRepositorio herramientaRepositorio;
-
     @Autowired
     private UsuarioRepositorio usuarioRepositorio;
 
@@ -68,13 +66,15 @@ public class ReservaService {
         return convertirADTO(reservaRepositorio.save(reserva));
     }
 
-    // Nuevo método para seguridad por email
-    public List<ReservaResponseDTO> listarPorEmail(String email) {
-        return reservaRepositorio.findByClienteEmail(email).stream()
+    // UNIFICADO: Ahora se llama listarPorCorreo y usa el repo correcto
+    @Transactional(readOnly = true)
+    public List<ReservaResponseDTO> listarPorCorreo(String correo) {
+        return reservaRepositorio.findByClienteCorreo(correo).stream()
                 .map(this::convertirADTO)
                 .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
     public List<ReservaResponseDTO> listarPorCliente(Long clienteId) {
         return reservaRepositorio.findByClienteId(clienteId).stream()
                 .map(this::convertirADTO)
@@ -84,12 +84,16 @@ public class ReservaService {
     private ReservaResponseDTO convertirADTO(Reserva reserva) {
         ReservaResponseDTO dto = new ReservaResponseDTO();
         dto.setId(reserva.getId());
-        dto.setNombreCliente(reserva.getCliente().getNombre() + " " + reserva.getCliente().getApellido());
-        dto.setNombreHerramienta(reserva.getHerramienta().getNombre());
+        if (reserva.getCliente() != null) {
+            dto.setNombreCliente(reserva.getCliente().getNombre() + " " + reserva.getCliente().getApellido());
+        }
+        if (reserva.getHerramienta() != null) {
+            dto.setNombreHerramienta(reserva.getHerramienta().getNombre());
+        }
         dto.setFechaInicio(reserva.getFechaInicio());
         dto.setFechaFin(reserva.getFechaFin());
         dto.setTotal(reserva.getTotal());
-        dto.setEstado(reserva.getEstado().name());
+        dto.setEstado(reserva.getEstado() != null ? reserva.getEstado().name() : null);
         return dto;
     }
 }

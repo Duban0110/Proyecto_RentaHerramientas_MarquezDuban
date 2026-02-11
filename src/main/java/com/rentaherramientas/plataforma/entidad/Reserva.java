@@ -32,12 +32,12 @@ public class Reserva {
 
     // Relación con el Usuario (quien alquila)
     // El nombre de la columna en MySQL será 'cliente_id'
-    @ManyToOne(fetch = FetchType.EAGER) // EAGER para que cargue los datos del cliente al buscar la reserva
+    @ManyToOne(fetch = FetchType.LAZY) // EAGER para que cargue los datos del cliente al buscar la reserva
     @JoinColumn(name = "cliente_id", nullable = false)
     private Usuario cliente;
 
     // Relación con la Herramienta (qué se alquila)
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "herramienta_id", nullable = false)
     private Herramienta herramienta;
 }

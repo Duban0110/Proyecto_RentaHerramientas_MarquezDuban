@@ -1,13 +1,13 @@
 package com.rentaherramientas.plataforma.entidad;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.*;
 import java.math.BigDecimal;
 
 @Entity
 @Table(name = "herramientas")
-@Getter
-@Setter
+@Getter @Setter
 @NoArgsConstructor @AllArgsConstructor
 public class Herramienta {
     @Id
@@ -16,13 +16,11 @@ public class Herramienta {
 
     private String nombre;
     private String descripcion;
-
-    @Column(name = "precio_dia")
     private BigDecimal precioDia;
-
     private Boolean disponible;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "proveedor_id")
+    @JsonIgnoreProperties({"contrasena", "rol", "apellido"}) // Evita que Swagger cargue datos sensibles o pesados
     private Usuario proveedor;
 }

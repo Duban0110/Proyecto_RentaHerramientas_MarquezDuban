@@ -7,10 +7,10 @@ import java.time.LocalDate;
 @Data
 public class ReservaResponseDTO {
     private Long id;
-    private String nombreCliente;
-    private String nombreHerramienta;
     private LocalDate fechaInicio;
     private LocalDate fechaFin;
     private BigDecimal total;
     private String estado;
+    private String nombreCliente; // String, no objeto Usuario
+    private String nombreHerramienta; // String, no objeto Herramienta
 }

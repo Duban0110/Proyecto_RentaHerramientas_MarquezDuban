@@ -3,6 +3,7 @@ package com.rentaherramientas.plataforma.controlador;
 import com.rentaherramientas.plataforma.dto.ReservaRequestDTO;
 import com.rentaherramientas.plataforma.dto.ReservaResponseDTO;
 import com.rentaherramientas.plataforma.servicio.ReservaService;
+import io.swagger.v3.oas.annotations.Parameter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -27,14 +28,16 @@ public class ReservaController {
         }
     }
 
-    // Este endpoint es automático: sabe quién eres por tu Login
     @GetMapping("/mis-reservas")
-    public ResponseEntity<List<ReservaResponseDTO>> listarMisReservas(@AuthenticationPrincipal UserDetails userDetails) {
-        String email = userDetails.getUsername();
-        return ResponseEntity.ok(reservaService.listarPorEmail(email));
+    public ResponseEntity<List<ReservaResponseDTO>> listarMisReservas(
+            @Parameter(hidden = true) // ESTO OCULTA EL OBJETO COMPLEJO Y QUITA EL ERROR 500
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        // Obtenemos el correo desde la sesión
+        String correo = userDetails.getUsername();
+        return ResponseEntity.ok(reservaService.listarPorCorreo(correo));
     }
 
-    // Este lo puede usar el Admin para buscar a cualquier cliente
     @GetMapping("/cliente/{id}")
     public ResponseEntity<List<ReservaResponseDTO>> listarPorCliente(@PathVariable Long id) {
         return ResponseEntity.ok(reservaService.listarPorCliente(id));
