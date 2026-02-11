@@ -27,9 +27,18 @@ public class HerramientaController {
         HerramientaDTO dto = new HerramientaDTO();
         dto.setId(herramienta.getId());
         dto.setNombre(herramienta.getNombre());
-        dto.setDescripcion(herramienta.getDescripcion()); // Ahora sí funcionará
-        dto.setPrecioDia(herramienta.getPrecioDia());
-        dto.setDisponible(herramienta.getDisponible());
+        dto.setDescripcion(herramienta.getDescripcion());
+
+        // CORRECCIÓN DE TIPO AQUÍ:
+        // Si el DTO es Double y la Entidad es BigDecimal:
+        if (herramienta.getPrecioDia() != null) {
+            dto.setPrecioDia(herramienta.getPrecioDia());
+            // ^ Si ambos son BigDecimal, esto funciona directo.
+            // ^ Si el DTO es Double, usa: dto.setPrecioDia(herramienta.getPrecioDia().doubleValue());
+        }
+
+        dto.setStock(herramienta.getStock());
+        dto.setDisponible(herramienta.getStock() != null && herramienta.getStock() > 0);
 
         if (herramienta.getProveedor() != null) {
             dto.setNombreProveedor(herramienta.getProveedor().getNombre());
