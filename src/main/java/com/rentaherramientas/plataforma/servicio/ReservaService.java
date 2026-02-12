@@ -5,7 +5,6 @@ import com.lowagie.text.pdf.PdfPCell;
 import com.lowagie.text.pdf.PdfPTable;
 import com.lowagie.text.pdf.PdfWriter;
 import com.rentaherramientas.plataforma.dto.*;
-import com.rentaherramientas.plataforma.dto.EstadisticaHerramienta;
 import com.rentaherramientas.plataforma.entidad.*;
 import com.rentaherramientas.plataforma.repositorio.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,6 +14,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.io.ByteArrayOutputStream;
 import java.math.BigDecimal;
 import java.awt.Color;
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -30,13 +31,18 @@ public class ReservaService {
     @Autowired
     private UsuarioRepositorio usuarioRepositorio;
 
+    @Autowired
+    private PagoRepositorio pagoRepositorio; // Inyectado para la Opción B
+
     // --- MÉTODOS DE ESTADÍSTICAS ---
+
     public Double obtenerTotalIngresos() {
-        BigDecimal total = reservaRepositorio.calcularIngresosTotales();
+        // Sumamos directamente desde la tabla de pagos
+        BigDecimal total = pagoRepositorio.sumarTodoLosPagos();
         return total != null ? total.doubleValue() : 0.0;
     }
 
-    public List<EstadisticaHerramienta> obtenerEstadisticasHerramientas() {
+    public List<EstadisticaHerramientaDTO> obtenerEstadisticasHerramientas() {
         return reservaRepositorio.obtenerHerramientasMasPopulares();
     }
 
@@ -44,16 +50,18 @@ public class ReservaService {
 
     @Transactional
     public ReservaResponseDTO crearReserva(ReservaRequestDTO dto) {
+        // 1. Validaciones de existencia
         Herramienta herramienta = herramientaRepositorio.findById(dto.getHerramientaId())
                 .orElseThrow(() -> new RuntimeException("Error: Herramienta no encontrada"));
 
-        // Sincronizado con UsuarioRepositorio
         Usuario usuario = usuarioRepositorio.findById(dto.getClienteId())
                 .orElseThrow(() -> new RuntimeException("Error: Usuario no encontrado"));
 
+        // 2. Lógica de Stock
         herramienta.reducirStock();
         herramientaRepositorio.saveAndFlush(herramienta);
 
+        // 3. Crear la entidad Reserva
         Reserva reserva = new Reserva();
         reserva.setUsuario(usuario);
         reserva.setHerramienta(herramienta);
@@ -61,13 +69,28 @@ public class ReservaService {
         reserva.setFechaFin(dto.getFechaFin());
         reserva.setEstado(EstadoReserva.ACTIVA);
 
-        return convertirADTO(reservaRepositorio.save(reserva));
+        // 4. Guardar Reserva para obtener el ID
+        Reserva reservaGuardada = reservaRepositorio.save(reserva);
+
+        // 5. LÓGICA DE PAGO (Opción B)
+        // Calcular el monto basándose en los días
+        long dias = ChronoUnit.DAYS.between(dto.getFechaInicio(), dto.getFechaFin());
+        if (dias <= 0) dias = 1;
+        BigDecimal montoTotal = herramienta.getPrecioDia().multiply(BigDecimal.valueOf(dias));
+
+        // Crear y guardar el registro de Pago
+        Pago pago = new Pago();
+        pago.setMonto(montoTotal);
+        pago.setFechaPago(LocalDateTime.now());
+        pago.setMetodoPago("EFECTIVO/TRANSFERENCIA");
+        pago.setReserva(reservaGuardada);
+        pago.setNumeroFactura("FAC-" + System.currentTimeMillis());
+
+        pagoRepositorio.save(pago); // Esto hace que el dashboard deje de marcar 0
+
+        return convertirADTO(reservaGuardada);
     }
 
-    /**
-     * Obtiene las reservas de un cliente específico por su ID.
-     * Este método resuelve el Error 500 al conectar con findByUsuarioId.
-     */
     public List<ReservaResponseDTO> listarPorCliente(Long id) {
         return reservaRepositorio.findByUsuarioId(id).stream()
                 .map(this::convertirADTO)
@@ -106,13 +129,22 @@ public class ReservaService {
         return "Error en la devolución.";
     }
 
-    /**
-     * LÓGICA PARA GENERAR FACTURA EN PDF
-     */
+    // --- GENERACIÓN DE FACTURA PDF ---
+
     public byte[] generarFacturaPDF(PagoRequestDTO dto) {
         Reserva reserva = reservaRepositorio.findById(dto.getReservaId())
                 .orElseThrow(() -> new RuntimeException("Reserva no encontrada"));
 
+        // ESTO ES CLAVE: Mira la consola de IntelliJ cuando des clic al botón
+        System.out.println("DEBUG - ID: " + reserva.getId());
+        System.out.println("DEBUG - Estado en BD: [" + reserva.getEstado() + "]");
+        System.out.println("DEBUG - ¿Es COMPLETADA?: " + (reserva.getEstado() == EstadoReserva.COMPLETADA));
+
+        if (reserva.getEstado() == null || !reserva.getEstado().toString().equals("COMPLETADA")) {
+            throw new RuntimeException("DEVOLUCIÓN PENDIENTE: No puede descargar la factura hasta devolver la herramienta.");
+        }
+
+        // Solo si es COMPLETADA llegará a este punto
         ByteArrayOutputStream salida = new ByteArrayOutputStream();
         Document documento = new Document(PageSize.A4);
 
@@ -120,6 +152,7 @@ public class ReservaService {
             PdfWriter.getInstance(documento, salida);
             documento.open();
 
+            // --- DISEÑO DEL PDF (Tu código actual) ---
             Font fuenteTitulo = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 20, Color.DARK_GRAY);
             Font fuenteSubtitulo = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 12);
             Font fuenteCuerpo = FontFactory.getFont(FontFactory.HELVETICA, 11);
@@ -156,6 +189,7 @@ public class ReservaService {
             tablaDetalle.addCell(new Phrase(reserva.getFechaInicio() + " al " + reserva.getFechaFin(), fuenteCuerpo));
 
             tablaDetalle.addCell(new Phrase("TOTAL PAGADO", fuenteSubtitulo));
+            // Usamos el monto que viene del DTO o el calculado de la reserva
             tablaDetalle.addCell(new Phrase("$" + dto.getMonto(), FontFactory.getFont(FontFactory.HELVETICA_BOLD, 12, Color.BLUE)));
 
             documento.add(tablaDetalle);
@@ -191,7 +225,7 @@ public class ReservaService {
         dto.setEstado(r.getEstado() != null ? r.getEstado().name() : "ACTIVA");
 
         if (r.getHerramienta() != null && r.getFechaInicio() != null && r.getFechaFin() != null) {
-            long dias = java.time.temporal.ChronoUnit.DAYS.between(r.getFechaInicio(), r.getFechaFin());
+            long dias = ChronoUnit.DAYS.between(r.getFechaInicio(), r.getFechaFin());
             if (dias <= 0) dias = 1;
 
             BigDecimal precioPorDia = r.getHerramienta().getPrecioDia();

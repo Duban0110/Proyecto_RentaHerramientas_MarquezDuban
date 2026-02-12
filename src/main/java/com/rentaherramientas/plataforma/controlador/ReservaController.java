@@ -69,7 +69,7 @@ public class ReservaController {
 
     @PostMapping("/pagar/descargar")
     @Operation(summary = "Generar y descargar factura en PDF")
-    public ResponseEntity<byte[]> descargarFactura(@RequestBody PagoRequestDTO dto) {
+    public ResponseEntity<?> descargarFactura(@RequestBody PagoRequestDTO dto) {
         try {
             byte[] pdfBytes = reservaService.generarFacturaPDF(dto);
             return ResponseEntity.ok()
@@ -77,11 +77,14 @@ public class ReservaController {
                     .contentType(MediaType.APPLICATION_PDF)
                     .contentLength(pdfBytes.length)
                     .body(pdfBytes);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
         } catch (Exception e) {
-            return ResponseEntity.internalServerError().build();
+            return ResponseEntity.internalServerError().body("Error inesperado: " + e.getMessage());
         }
     }
 
+    // --- EL MÉTODO QUE FALTABA ---
     private String obtenerCorreo(String token, UserDetails userDetails) {
         if (userDetails != null) return userDetails.getUsername();
         if (token != null && token.startsWith("Bearer ")) {
