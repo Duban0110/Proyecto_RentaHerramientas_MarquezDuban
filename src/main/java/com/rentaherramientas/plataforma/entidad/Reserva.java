@@ -34,4 +34,5 @@ public class Reserva {
     private String observacionesDevolucion;
 
     private BigDecimal cargosAdicionales;
-}
+
+    }

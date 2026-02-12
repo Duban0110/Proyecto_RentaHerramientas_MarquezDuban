@@ -1,6 +1,7 @@
 package com.rentaherramientas.plataforma.repositorio;
 
 import com.rentaherramientas.plataforma.entidad.Reserva;
+import com.rentaherramientas.plataforma.dto.EstadisticaHerramienta; // Importa la interfaz
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
@@ -15,11 +16,14 @@ public interface ReservaRepositorio extends JpaRepository<Reserva, Long> {
 
     List<Reserva> findByClienteCorreo(String correo);
 
-    // Consulta para sumar ingresos totales
-    @Query("SELECT SUM(r.total) FROM Reserva r WHERE r.estado = 'COMPLETADA'")
+    // Usamos COALESCE para que si la suma es nula, devuelva 0
+    @Query("SELECT COALESCE(SUM(r.total), 0) FROM Reserva r")
     BigDecimal calcularIngresosTotales();
 
-    // Consulta para obtener ranking de popularidad
-    @Query("SELECT r.herramienta.nombre, COUNT(r) FROM Reserva r GROUP BY r.herramienta.nombre ORDER BY COUNT(r) DESC")
-    List<Object[]> obtenerHerramientasMasPopulares();
+    // Consulta con Proyección: Los alias (AS herramienta) deben coincidir con los getters de la interfaz
+    @Query("SELECT r.herramienta.nombre AS herramienta, COUNT(r) AS cantidadReservas " +
+            "FROM Reserva r " +
+            "GROUP BY r.herramienta.nombre " +
+            "ORDER BY COUNT(r) DESC")
+    List<EstadisticaHerramienta> obtenerHerramientasMasPopulares();
 }

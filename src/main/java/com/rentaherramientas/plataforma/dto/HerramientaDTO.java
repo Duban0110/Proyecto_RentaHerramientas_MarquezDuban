@@ -1,15 +1,16 @@
 package com.rentaherramientas.plataforma.dto;
 
 import lombok.Data;
-import java.math.BigDecimal; // Asegúrate de usar BigDecimal
+import java.math.BigDecimal;
 
 @Data
 public class HerramientaDTO {
     private Long id;
     private String nombre;
     private String descripcion;
-    private BigDecimal precioDia; // Cambiado a BigDecimal
+    private BigDecimal precioDia;
     private Integer stock;
-    private boolean disponible;
+    private Boolean disponible;
+    private String imagenUrl; // <--- NUEVO CAMPO
     private String nombreProveedor;
 }

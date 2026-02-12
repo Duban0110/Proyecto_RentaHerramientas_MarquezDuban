@@ -23,13 +23,11 @@ public class AuthController {
     private JwtUtil jwtUtil;
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody LoginRequestDTO loginDto) {
-        // Autentica contra la base de datos
+    public ResponseEntity<Map<String, String>> login(@RequestBody LoginRequestDTO loginDto) {
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(loginDto.getCorreo(), loginDto.getContrasena())
         );
 
-        // El principal ahora contiene el ID gracias a que Usuario implementa UserDetails
         UserDetails userDetails = (UserDetails) authentication.getPrincipal();
         String token = jwtUtil.generateToken(userDetails);
 

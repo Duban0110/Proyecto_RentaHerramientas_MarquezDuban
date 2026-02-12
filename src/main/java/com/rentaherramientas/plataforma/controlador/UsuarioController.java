@@ -14,7 +14,8 @@ import java.util.stream.Collectors;
 @RequestMapping("/api/usuarios")
 public class UsuarioController {
 
-    @Autowired private UsuarioService usuarioService;
+    @Autowired
+    private UsuarioService usuarioService;
 
     @PostMapping
     public ResponseEntity<?> registrar(@RequestBody Usuario usuario) {
@@ -28,8 +29,10 @@ public class UsuarioController {
 
     @GetMapping
     public ResponseEntity<List<UsuarioDTO>> listar() {
-        return ResponseEntity.ok(usuarioService.obtenerTodos().stream()
-                .map(this::mapearDTO).collect(Collectors.toList()));
+        List<UsuarioDTO> usuarios = usuarioService.obtenerTodos().stream()
+                .map(this::mapearDTO)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(usuarios);
     }
 
     private UsuarioDTO mapearDTO(Usuario u) {

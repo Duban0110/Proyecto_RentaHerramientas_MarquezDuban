@@ -12,6 +12,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -27,6 +28,7 @@ import java.util.List;
 
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity
 public class SecurityConfig {
 
     @Autowired
@@ -39,85 +41,50 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // 1. Rutas Públicas y Swagger
-                        .requestMatchers(
-                                "/v3/api-docs/**",
-                                "/swagger-ui/**",
-                                "/swagger-ui.html",
-                                "/api/auth/**"
-                        ).permitAll()
-
-                        // PERMITIR REGISTRO
-                        .requestMatchers(HttpMethod.POST, "/api/usuarios").permitAll()
-
-                        // Permitir OPTIONS para evitar errores de CORS pre-flight
+                        // 1. RECURSOS DEL SISTEMA Y AUTH
+                        .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html", "/api/auth/**").permitAll()
+                        .requestMatchers("/error").permitAll() // IMPORTANTE: Permite que Spring maneje sus propios errores
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
-                        // 2. Reportes de Admin
-                        .requestMatchers("/api/admin/reportes/**").hasAnyAuthority("ADMINISTRADOR", "ROLE_ADMINISTRADOR")
+                        // 2. USUARIOS
+                        .requestMatchers(HttpMethod.POST, "/api/usuarios").permitAll() // Registro público
 
-                        // 3. Gestión de Usuarios (Admin solamente)
-                        .requestMatchers(HttpMethod.GET, "/api/usuarios").hasAnyAuthority("ADMINISTRADOR", "ROLE_ADMINISTRADOR")
+                        // 3. HERRAMIENTAS
+                        .requestMatchers(HttpMethod.GET, "/api/herramientas/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/herramientas/**").hasAnyAuthority("PROVEEDOR", "ROLE_PROVEEDOR", "ADMINISTRADOR", "ROLE_ADMINISTRADOR")
+                        .requestMatchers(HttpMethod.POST, "/api/herramientas").hasAnyAuthority("PROVEEDOR", "ROLE_PROVEEDOR", "ADMINISTRADOR", "ROLE_ADMINISTRADOR")
+
+                        // 4. REPORTES Y ADMIN (Mover arriba para asegurar prioridad)
+                        .requestMatchers("/api/admin/reportes/**").hasAnyAuthority("ADMINISTRADOR", "ROLE_ADMINISTRADOR")
+                        .requestMatchers("/api/admin/**").hasAnyAuthority("ADMINISTRADOR", "ROLE_ADMINISTRADOR")
                         .requestMatchers("/api/usuarios/**").hasAnyAuthority("ADMINISTRADOR", "ROLE_ADMINISTRADOR")
 
-                        // 4. HERRAMIENTAS (Configuración específica para evitar el 403)
-                        // El GET es público o para todos los autenticados
-                        .requestMatchers(HttpMethod.GET, "/api/herramientas/**").permitAll()
-                        // El POST solo para Proveedor y Admin
-                        .requestMatchers(HttpMethod.POST, "/api/herramientas/**").hasAnyAuthority("PROVEEDOR", "ROLE_PROVEEDOR", "ADMINISTRADOR", "ROLE_ADMINISTRADOR")
+                        // 5. RESERVAS
+                        .requestMatchers("/api/reservas/proveedor").hasAnyAuthority("PROVEEDOR", "ROLE_PROVEEDOR", "ADMINISTRADOR", "ROLE_ADMINISTRADOR")
+                        .requestMatchers(HttpMethod.PATCH, "/api/reservas/*/devolucion").hasAnyAuthority("PROVEEDOR", "ROLE_PROVEEDOR", "ADMINISTRADOR", "ROLE_ADMINISTRADOR")
+                        .requestMatchers("/api/reservas/mis-reservas").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/api/reservas").authenticated()
+                        .requestMatchers("/api/reservas/**").authenticated()
 
-                        // 5. Reservas (Clientes y Admin)
-                        .requestMatchers("/api/reservas/**").hasAnyAuthority("CLIENTE", "ROLE_CLIENTE", "ADMINISTRADOR", "ROLE_ADMINISTRADOR")
-
-                        // 6. Resto de peticiones deben estar autenticadas
                         .anyRequest().authenticated()
                 );
 
         http.addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);
-
         return http.build();
     }
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration configuration = new CorsConfiguration();
-        // Permitir orígenes de desarrollo (Live Server de VS Code y otros)
-        configuration.setAllowedOrigins(Arrays.asList(
-                "http://localhost:5500",
-                "http://127.0.0.1:5500",
-                "http://localhost:3000"
-        ));
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
-        // Se agregaron headers comunes para evitar bloqueos
-        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Cache-Control", "X-Requested-With", "Accept", "Origin"));
-        configuration.setAllowCredentials(true);
-        configuration.setExposedHeaders(List.of("Authorization"));
-
+        CorsConfiguration config = new CorsConfiguration();
+        config.setAllowedOrigins(Arrays.asList("http://localhost:5500", "http://127.0.0.1:5500", "http://localhost:3000"));
+        config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
+        config.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type"));
+        config.setAllowCredentials(true);
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration);
+        source.registerCorsConfiguration("/**", config);
         return source;
     }
 
-    @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration authConfig) throws Exception {
-        return authConfig.getAuthenticationManager();
-    }
-
-    @Bean
-    public BCryptPasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
-
-    @Bean
-    public OpenAPI customOpenAPI() {
-        return new OpenAPI()
-                .info(new Info().title("API Renta de Herramientas").version("1.0"))
-                .addSecurityItem(new SecurityRequirement().addList("bearerAuth"))
-                .components(new Components()
-                        .addSecuritySchemes("bearerAuth", new SecurityScheme()
-                                .name("bearerAuth")
-                                .type(SecurityScheme.Type.HTTP)
-                                .scheme("bearer")
-                                .bearerFormat("JWT")));
-    }
+    @Bean public AuthenticationManager authenticationManager(AuthenticationConfiguration authConfig) throws Exception { return authConfig.getAuthenticationManager(); }
+    @Bean public BCryptPasswordEncoder passwordEncoder() { return new BCryptPasswordEncoder(); }
 }

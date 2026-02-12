@@ -22,7 +22,6 @@ public class Herramienta {
     @Column(length = 500)
     private String descripcion;
 
-    // BigDecimal es la mejor práctica para precios
     @Column(name = "precio_dia", precision = 10, scale = 2, nullable = false)
     private BigDecimal precioDia;
 
@@ -32,7 +31,27 @@ public class Herramienta {
     @Column(nullable = false)
     private Boolean disponible = true;
 
-    @ManyToOne(fetch = FetchType.EAGER) // Cambiado a EAGER para facilitar el mapeo al DTO
+    // --- NUEVO CAMPO PARA IMÁGENES ---
+    @Column(name = "imagen_url", length = 1000)
+    private String imagenUrl;
+
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "proveedor_id")
     private Usuario proveedor;
+
+    // --- MÉTODOS DE LÓGICA DE NEGOCIO ---
+
+    public void reducirStock() {
+        if (this.stock > 0) {
+            this.stock--;
+            this.disponible = (this.stock > 0);
+        } else {
+            throw new RuntimeException("No hay stock suficiente para: " + this.nombre);
+        }
+    }
+
+    public void aumentarStock() {
+        this.stock++;
+        this.disponible = true;
+    }
 }

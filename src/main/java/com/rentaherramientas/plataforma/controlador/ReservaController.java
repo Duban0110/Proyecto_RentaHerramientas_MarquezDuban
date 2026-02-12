@@ -3,9 +3,12 @@ package com.rentaherramientas.plataforma.controlador;
 import com.rentaherramientas.plataforma.dto.*;
 import com.rentaherramientas.plataforma.servicio.ReservaService;
 import com.rentaherramientas.plataforma.seguridad.JwtUtil;
-import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.Operation;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
@@ -23,6 +26,7 @@ public class ReservaController {
     private JwtUtil jwtUtil;
 
     @PostMapping
+    @Operation(summary = "Crear una nueva reserva")
     public ResponseEntity<?> crear(@RequestBody ReservaRequestDTO dto) {
         try {
             return ResponseEntity.ok(reservaService.crearReserva(dto));
@@ -32,17 +36,31 @@ public class ReservaController {
     }
 
     @GetMapping("/mis-reservas")
+    @Operation(summary = "Listar reservas del cliente autenticado")
     public ResponseEntity<List<ReservaResponseDTO>> listarMisReservas(
-            @RequestHeader("Authorization") String token,
-            @Parameter(hidden = true) @AuthenticationPrincipal UserDetails userDetails) {
+            @RequestHeader(value = "Authorization", required = false) String token,
+            @AuthenticationPrincipal UserDetails userDetails) {
 
-        String correo = (userDetails != null) ? userDetails.getUsername() : jwtUtil.extractUsername(token.substring(7));
-        return ResponseEntity.ok(reservaService.listarPorCorreo(correo));
+        return ResponseEntity.ok(reservaService.listarPorCorreo(obtenerCorreo(token, userDetails)));
     }
 
-    @PutMapping("/devolver")
-    public ResponseEntity<?> devolver(@RequestBody DevolucionRequestDTO dto) {
+    @GetMapping("/proveedor")
+    @Operation(summary = "Listar herramientas alquiladas al proveedor")
+    @PreAuthorize("hasAnyAuthority('PROVEEDOR', 'ROLE_PROVEEDOR', 'ADMINISTRADOR', 'ROLE_ADMINISTRADOR')")
+    public ResponseEntity<List<ReservaResponseDTO>> listarReservasParaProveedor(
+            @RequestHeader(value = "Authorization", required = false) String token,
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        return ResponseEntity.ok(reservaService.listarParaProveedor(obtenerCorreo(token, userDetails)));
+    }
+
+    @PatchMapping("/{id}/devolucion")
+    @Operation(summary = "Confirmar devolución de herramienta")
+    @PreAuthorize("hasAnyAuthority('PROVEEDOR', 'ROLE_PROVEEDOR', 'ADMINISTRADOR', 'ROLE_ADMINISTRADOR')")
+    public ResponseEntity<?> confirmarDevolucion(@PathVariable Long id) {
         try {
+            DevolucionRequestDTO dto = new DevolucionRequestDTO();
+            dto.setReservaId(id);
             return ResponseEntity.ok(reservaService.completarDevolucion(dto));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
@@ -50,13 +68,25 @@ public class ReservaController {
     }
 
     @PostMapping("/pagar/descargar")
+    @Operation(summary = "Generar y descargar factura en PDF")
     public ResponseEntity<byte[]> descargarFactura(@RequestBody PagoRequestDTO dto) {
-        // Ahora el símbolo procesarPagoSimulado ya existe en el Service
-        String facturaTexto = reservaService.procesarPagoSimulado(dto);
-        byte[] facturaBytes = facturaTexto.getBytes();
+        try {
+            byte[] pdfBytes = reservaService.generarFacturaPDF(dto);
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=factura_" + dto.getReservaId() + ".pdf")
+                    .contentType(MediaType.APPLICATION_PDF)
+                    .contentLength(pdfBytes.length)
+                    .body(pdfBytes);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
+        }
+    }
 
-        return ResponseEntity.ok()
-                .header("Content-Disposition", "attachment; filename=factura_reserva_" + dto.getReservaId() + ".txt")
-                .body(facturaBytes);
+    private String obtenerCorreo(String token, UserDetails userDetails) {
+        if (userDetails != null) return userDetails.getUsername();
+        if (token != null && token.startsWith("Bearer ")) {
+            return jwtUtil.extractUsername(token.substring(7));
+        }
+        throw new RuntimeException("Usuario no identificado");
     }
 }
