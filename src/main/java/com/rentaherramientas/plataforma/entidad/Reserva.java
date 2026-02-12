@@ -7,7 +7,7 @@ import java.time.LocalDate;
 
 @Entity
 @Table(name = "reservas")
-@Data // Esto genera automáticamente los Getters y Setters
+@Data // Genera automáticamente getUsuario() y setUsuario()
 public class Reserva {
 
     @Id
@@ -15,8 +15,8 @@ public class Reserva {
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name = "cliente_id", nullable = false)
-    private Usuario cliente;
+    @JoinColumn(name = "usuario_id", nullable = false) // Cambiado para coincidir con tu DB
+    private Usuario usuario; // Cambiado de 'cliente' a 'usuario'
 
     @ManyToOne
     @JoinColumn(name = "herramienta_id", nullable = false)
@@ -34,5 +34,4 @@ public class Reserva {
     private String observacionesDevolucion;
 
     private BigDecimal cargosAdicionales;
-
-    }
+}

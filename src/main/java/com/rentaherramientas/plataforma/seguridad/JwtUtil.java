@@ -1,17 +1,18 @@
 package com.rentaherramientas.plataforma.seguridad;
 
 import com.rentaherramientas.plataforma.entidad.Usuario;
-import com.rentaherramientas.plataforma.repositorio.UsuarioRepositorio; // <--- AGREGAMOS ESTO
+import com.rentaherramientas.plataforma.repositorio.UsuarioRepositorio;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
-import org.springframework.beans.factory.annotation.Autowired; // <--- AGREGAMOS ESTO
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
-import java.security.Key;
+import javax.crypto.SecretKey;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -20,23 +21,25 @@ import java.util.stream.Collectors;
 public class JwtUtil {
 
     @Autowired
-    private UsuarioRepositorio usuarioRepositorio; // <--- Inyectamos el repo para buscar el ID seguro
+    private UsuarioRepositorio usuarioRepositorio;
 
-    private final Key key = Keys.secretKeyFor(SignatureAlgorithm.HS256);
-    private final long EXPIRATION_TIME = 1000 * 60 * 60 * 10;
+    // Llave fija para que las sesiones no mueran al reiniciar el servidor
+    private static final String SECRET_STRING = "MiClaveSuperSecretaDeAlMenos32CaracteresParaExamenFinal2026";
+    private final SecretKey key = Keys.hmacShaKeyFor(SECRET_STRING.getBytes(StandardCharsets.UTF_8));
+
+    private final long EXPIRATION_TIME = 1000 * 60 * 60 * 10; // 10 horas
 
     public String generateToken(UserDetails userDetails) {
         Map<String, Object> claims = new HashMap<>();
 
-        // MÉTODO INFALIBLE: Buscamos el usuario en la DB por su correo para asegurar el ID
-        Usuario usuario = usuarioRepositorio.findByCorreo(userDetails.getUsername())
-                .orElse(null);
+        // Inyectamos el ID del usuario
+        usuarioRepositorio.findByCorreo(userDetails.getUsername())
+                .ifPresent(usuario -> {
+                    claims.put("id", usuario.getId());
+                    System.out.println("DEBUG: Token generado para ID: " + usuario.getId());
+                });
 
-        if (usuario != null) {
-            claims.put("id", usuario.getId());
-            System.out.println("ID inyectado en Token: " + usuario.getId()); // Ver esto en consola de IntelliJ
-        }
-
+        // Guardamos los roles
         claims.put("roles", userDetails.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
                 .collect(Collectors.toList()));
@@ -46,18 +49,30 @@ public class JwtUtil {
                 .setSubject(userDetails.getUsername())
                 .setIssuedAt(new Date(System.currentTimeMillis()))
                 .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME))
-                .signWith(key)
+                .signWith(key, SignatureAlgorithm.HS256)
                 .compact();
     }
 
-    // ... (el resto de tus métodos extractUsername, validateToken, etc., están perfectos, no los cambies)
+    // --- NUEVOS MÉTODOS Y ACTUALIZACIONES ---
+
+    /**
+     * Extrae los roles del token.
+     * Este es el método que tu JwtRequestFilter necesita.
+     */
+    public List<String> extractRoles(String token) {
+        return extractClaim(token, claims -> claims.get("roles", List.class));
+    }
+
+    /**
+     * Extrae el ID del usuario que guardamos en el token.
+     * Útil si necesitas el ID directamente en el backend.
+     */
+    public Long extractUserId(String token) {
+        return extractClaim(token, claims -> claims.get("id", Long.class));
+    }
 
     public String extractUsername(String token) {
         return extractClaim(token, Claims::getSubject);
-    }
-
-    public List<String> extractRoles(String token) {
-        return extractAllClaims(token).get("roles", List.class);
     }
 
     public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
@@ -66,11 +81,16 @@ public class JwtUtil {
     }
 
     private Claims extractAllClaims(String token) {
-        return Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token).getBody();
+        return Jwts.parserBuilder()
+                .setSigningKey(key)
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
     }
 
     public boolean validateToken(String token, String username) {
-        return (extractUsername(token).equals(username) && !isTokenExpired(token));
+        final String tokenUsername = extractUsername(token);
+        return (tokenUsername.equals(username) && !isTokenExpired(token));
     }
 
     private boolean isTokenExpired(String token) {

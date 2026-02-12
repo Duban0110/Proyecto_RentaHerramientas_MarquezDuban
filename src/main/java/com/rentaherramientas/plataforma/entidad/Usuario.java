@@ -35,7 +35,7 @@ public class Usuario implements UserDetails {
     @JsonIgnore
     private List<Herramienta> herramientas;
 
-    @OneToMany(mappedBy = "cliente")
+    @OneToMany(mappedBy = "usuario")
     @JsonIgnore
     private List<Reserva> reservas;
 

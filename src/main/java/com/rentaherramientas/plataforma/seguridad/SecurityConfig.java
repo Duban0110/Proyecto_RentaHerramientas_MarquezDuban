@@ -2,7 +2,6 @@ package com.rentaherramientas.plataforma.seguridad;
 
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
-import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,7 +23,6 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.Arrays;
-import java.util.List;
 
 @Configuration
 @EnableWebSecurity
@@ -35,37 +33,53 @@ public class SecurityConfig {
     private JwtRequestFilter jwtRequestFilter;
 
     @Bean
+    public OpenAPI customOpenAPI() {
+        final String securitySchemeName = "bearerAuth";
+        return new OpenAPI()
+                .addSecurityItem(new SecurityRequirement().addList(securitySchemeName))
+                .components(new Components()
+                        .addSecuritySchemes(securitySchemeName,
+                                new SecurityScheme()
+                                        .name(securitySchemeName)
+                                        .type(SecurityScheme.Type.HTTP)
+                                        .scheme("bearer")
+                                        .bearerFormat("JWT")));
+    }
+
+    @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .cors(Customizer.withDefaults())
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // 1. RECURSOS DEL SISTEMA Y AUTH
-                        .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html", "/api/auth/**").permitAll()
-                        .requestMatchers("/error").permitAll() // IMPORTANTE: Permite que Spring maneje sus propios errores
+                        // 1. RECURSOS PÚBLICOS Y SWAGGER
+                        .requestMatchers("/api/auth/**", "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html", "/error").permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-
-                        // 2. USUARIOS
-                        .requestMatchers(HttpMethod.POST, "/api/usuarios").permitAll() // Registro público
-
-                        // 3. HERRAMIENTAS
+                        .requestMatchers(HttpMethod.POST, "/api/usuarios").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/herramientas/**").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/herramientas/**").hasAnyAuthority("PROVEEDOR", "ROLE_PROVEEDOR", "ADMINISTRADOR", "ROLE_ADMINISTRADOR")
-                        .requestMatchers(HttpMethod.POST, "/api/herramientas").hasAnyAuthority("PROVEEDOR", "ROLE_PROVEEDOR", "ADMINISTRADOR", "ROLE_ADMINISTRADOR")
 
-                        // 4. REPORTES Y ADMIN (Mover arriba para asegurar prioridad)
-                        .requestMatchers("/api/admin/reportes/**").hasAnyAuthority("ADMINISTRADOR", "ROLE_ADMINISTRADOR")
-                        .requestMatchers("/api/admin/**").hasAnyAuthority("ADMINISTRADOR", "ROLE_ADMINISTRADOR")
-                        .requestMatchers("/api/usuarios/**").hasAnyAuthority("ADMINISTRADOR", "ROLE_ADMINISTRADOR")
+                        // 2. RESERVAS - AJUSTE DE PRIORIDAD
+                        // Ponemos la ruta del proveedor primero para asegurar que no se confunda con /api/reservas/**
+                        .requestMatchers("/api/reservas/proveedor/**").hasAnyRole("PROVEEDOR", "ADMINISTRADOR")
+                        .requestMatchers("/api/reservas/mis-reservas/**").hasAnyRole("CLIENTE", "ADMINISTRADOR")
+                        .requestMatchers("/api/reservas/cliente/**").hasAnyRole("CLIENTE", "ADMINISTRADOR")
 
-                        // 5. RESERVAS
-                        .requestMatchers("/api/reservas/proveedor").hasAnyAuthority("PROVEEDOR", "ROLE_PROVEEDOR", "ADMINISTRADOR", "ROLE_ADMINISTRADOR")
-                        .requestMatchers(HttpMethod.PATCH, "/api/reservas/*/devolucion").hasAnyAuthority("PROVEEDOR", "ROLE_PROVEEDOR", "ADMINISTRADOR", "ROLE_ADMINISTRADOR")
-                        .requestMatchers("/api/reservas/mis-reservas").authenticated()
-                        .requestMatchers(HttpMethod.POST, "/api/reservas").authenticated()
+                        // Operaciones específicas
+                        .requestMatchers(HttpMethod.PATCH, "/api/reservas/*/devolucion").hasAnyRole("PROVEEDOR", "ADMINISTRADOR")
+                        .requestMatchers(HttpMethod.POST, "/api/reservas/**").hasAnyRole("CLIENTE", "ADMINISTRADOR")
+
+                        // 3. HERRAMIENTAS - ESCRITURA
+                        .requestMatchers(HttpMethod.POST, "/api/herramientas/**").hasAnyRole("PROVEEDOR", "ADMINISTRADOR")
+                        .requestMatchers(HttpMethod.PUT, "/api/herramientas/**").hasAnyRole("PROVEEDOR", "ADMINISTRADOR")
+                        .requestMatchers(HttpMethod.DELETE, "/api/herramientas/**").hasAnyRole("PROVEEDOR", "ADMINISTRADOR")
+
+                        // 4. ADMIN Y USUARIOS
+                        .requestMatchers("/api/admin/**").hasRole("ADMINISTRADOR")
+                        .requestMatchers("/api/usuarios/**").hasRole("ADMINISTRADOR")
+
+                        // 5. REGLA GENERAL PARA RESERVAS Y EL RESTO
                         .requestMatchers("/api/reservas/**").authenticated()
-
                         .anyRequest().authenticated()
                 );
 
@@ -76,15 +90,24 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(Arrays.asList("http://localhost:5500", "http://127.0.0.1:5500", "http://localhost:3000"));
+        // Agregamos '*' temporalmente si sigues teniendo problemas de CORS, o mantén tus puertos
+        config.setAllowedOrigins(Arrays.asList("http://localhost:5500", "http://127.0.0.1:5500", "http://localhost:3000", "http://localhost:4200"));
         config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
-        config.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type"));
+        config.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Accept"));
         config.setAllowCredentials(true);
+
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
         return source;
     }
 
-    @Bean public AuthenticationManager authenticationManager(AuthenticationConfiguration authConfig) throws Exception { return authConfig.getAuthenticationManager(); }
-    @Bean public BCryptPasswordEncoder passwordEncoder() { return new BCryptPasswordEncoder(); }
+    @Bean
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration authConfig) throws Exception {
+        return authConfig.getAuthenticationManager();
+    }
+
+    @Bean
+    public BCryptPasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
 }

@@ -22,27 +22,27 @@ INSERT INTO usuarios (nombre, apellido, correo, contrasena, rol) VALUES
 ('Clara', 'Soto', 'clara@cli.com', 'pass123', 'CLIENTE');
 
 -- HERRAMIENTAS (20 registros variados)
-INSERT INTO herramientas (nombre, descripcion, precio_dia, stock, imagen_url, proveedor_id) VALUES
-('Taladro Percutor Bosch', '800W, profesional', 15.00, 5, 'https://bit.ly/3S8xP1', 2),
-('Sierra Circular Dewalt', 'Corte madera 7-1/4', 22.00, 3, 'https://bit.ly/3S8xP2', 2),
-('Hidrolavadora Karcher', 'Presión 1800 PSI', 20.00, 4, 'https://bit.ly/3S8xP3', 3),
-('Escalera Telescópica', 'Aluminio 5.2m', 12.00, 8, 'https://bit.ly/3S8xP4', 3),
-('Martillo Demoledor', 'Uso industrial 15kg', 45.00, 2, 'https://bit.ly/3S8xP5', 4),
-('Pulidora Angular', '4-1/2 pulgadas 900W', 10.00, 6, 'https://bit.ly/3S8xP6', 5),
-('Motosierra Stihl', 'Gasolina, espada 20p', 35.00, 3, 'https://bit.ly/3S8xP7', 6),
-('Compresor de Aire', '50 Litros 2HP', 25.00, 4, 'https://bit.ly/3S8xP8', 7),
-('Generador Eléctrico', '3500W a gasolina', 50.00, 2, 'https://bit.ly/3S8xP9', 8),
-('Lijadora de Banda', 'Cinta 3x21 pulg', 14.00, 5, 'https://bit.ly/3S8xP10', 9),
-('Mezcladora de Cemento', 'Bulto y medio, motor 1HP', 60.00, 2, 'https://bit.ly/3S8xP11', 10),
-('Rotomartillo SDS Max', 'Energía impacto 12J', 38.00, 4, 'https://bit.ly/3S8xP12', 2),
-('Soldadora Inverter', '200 Amp multi-volt', 30.00, 5, 'https://bit.ly/3S8xP13', 3),
-('Podadora de Césped', 'Motor 4 tiempos 150cc', 18.00, 6, 'https://bit.ly/3S8xP14', 4),
-('Gato Hidráulico', 'Tipo caimán 3 toneladas', 8.00, 10, 'https://bit.ly/3S8xP15', 5),
-('Aspiradora Industrial', 'Seco/Mojado 12 gal', 16.00, 7, 'https://bit.ly/3S8xP16', 6),
-('Nivel Láser Verde', 'Alcance 30m autonivel', 25.00, 4, 'https://bit.ly/3S8xP17', 7),
-('Cortadora de Azulejo', 'Manual 60cm reforzada', 9.00, 12, 'https://bit.ly/3S8xP18', 8),
-('Andamio Estándar', 'Cuerpo completo con tijera', 5.00, 30, 'https://bit.ly/3S8xP19', 9),
-('Roto-excavadora Manual', 'Punta diamante 2HP', 40.00, 2, 'https://bit.ly/3S8xP20', 10);
+INSERT INTO herramientas (nombre, descripcion, precio_dia, stock, imagen_url, proveedor_id, disponible) VALUES
+('Taladro Percutor Bosch', '800W, profesional', 15.00, 5, 'http://markemstore.com/cdn/shop/collections/herramientas-manuales-253628.png', 2, 1),
+('Sierra Circular Dewalt', 'Corte madera 7-1/4', 22.00, 3, 'http://markemstore.com/cdn/shop/collections/herramientas-manuales-253628.png', 2, 1),
+('Hidrolavadora Karcher', 'Presión 1800 PSI', 20.00, 4, 'http://markemstore.com/cdn/shop/collections/herramientas-manuales-253628.png', 2, 1),
+('Escalera Telescópica', 'Aluminio 5.2m', 12.00, 8, 'http://markemstore.com/cdn/shop/collections/herramientas-manuales-253628.png', 2, 1),
+('Martillo Demoledor', 'Uso industrial 15kg', 45.00, 2, 'http://markemstore.com/cdn/shop/collections/herramientas-manuales-253628.png', 2, 1),
+('Pulidora Angular', '4-1/2 pulgadas 900W', 10.00, 6, 'http://markemstore.com/cdn/shop/collections/herramientas-manuales-253628.png', 2, 1),
+('Motosierra Stihl', 'Gasolina, espada 20p', 35.00, 3, 'http://markemstore.com/cdn/shop/collections/herramientas-manuales-253628.png', 2, 1),
+('Compresor de Aire', '50 Litros 2HP', 25.00, 4, 'http://markemstore.com/cdn/shop/collections/herramientas-manuales-253628.png', 2, 1),
+('Generador Eléctrico', '3500W a gasolina', 50.00, 2, 'http://markemstore.com/cdn/shop/collections/herramientas-manuales-253628.png', 2, 1),
+('Lijadora de Banda', 'Cinta 3x21 pulg', 14.00, 5, 'http://markemstore.com/cdn/shop/collections/herramientas-manuales-253628.png', 2, 1),
+('Mezcladora de Cemento', 'Bulto y medio, motor 1HP', 60.00, 2, 'http://markemstore.com/cdn/shop/collections/herramientas-manuales-253628.png', 2, 1),
+('Rotomartillo SDS Max', 'Energía impacto 12J', 38.00, 4, 'http://markemstore.com/cdn/shop/collections/herramientas-manuales-253628.png', 2, 1),
+('Soldadora Inverter', '200 Amp multi-volt', 30.00, 5, 'http://markemstore.com/cdn/shop/collections/herramientas-manuales-253628.png', 2, 1),
+('Podadora de Césped', 'Motor 4 tiempos 150cc', 18.00, 6, 'http://markemstore.com/cdn/shop/collections/herramientas-manuales-253628.png', 2, 1),
+('Gato Hidráulico', 'Tipo caimán 3 toneladas', 8.00, 10, 'http://markemstore.com/cdn/shop/collections/herramientas-manuales-253628.png', 2, 1),
+('Aspiradora Industrial', 'Seco/Mojado 12 gal', 16.00, 7, 'http://markemstore.com/cdn/shop/collections/herramientas-manuales-253628.png', 2, 1),
+('Nivel Láser Verde', 'Alcance 30m autonivel', 25.00, 4, 'https://images.unsplash.com/photo-1572981779307-38b8cabb2407?q=80&w=500', 2, 1),
+('Cortadora de Azulejo', 'Manual 60cm reforzada', 9.00, 12, 'https://images.unsplash.com/photo-1572981779307-38b8cabb2407?q=80&w=500', 2, 1),
+('Andamio Estándar', 'Cuerpo completo con tijera', 5.00, 30, 'https://images.unsplash.com/photo-1572981779307-38b8cabb2407?q=80&w=500', 2, 1),
+('Roto-excavadora Manual', 'Punta diamante 2HP', 40.00, 2, 'https://images.unsplash.com/photo-1572981779307-38b8cabb2407?q=80&w=500', 2, 1);
 
 -- RESERVAS (20 registros: Diferentes clientes y estados)
 INSERT INTO reservas (cliente_id, herramienta_id, fecha_inicio, fecha_fin, total, estado) VALUES

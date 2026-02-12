@@ -31,8 +31,9 @@ public class Herramienta {
     @Column(nullable = false)
     private Boolean disponible = true;
 
-    // --- NUEVO CAMPO PARA IMÁGENES ---
-    @Column(name = "imagen_url", length = 1000)
+    // --- CAMPO ACTUALIZADO PARA SOPORTAR BASE64 PESADOS ---
+    @Lob
+    @Column(name = "imagen_url", columnDefinition = "LONGTEXT")
     private String imagenUrl;
 
     @ManyToOne(fetch = FetchType.EAGER)
