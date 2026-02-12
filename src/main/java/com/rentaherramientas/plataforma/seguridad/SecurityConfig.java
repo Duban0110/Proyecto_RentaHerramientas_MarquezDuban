@@ -53,33 +53,29 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // 1. RECURSOS PÚBLICOS Y SWAGGER
+                        // 1. RECURSOS PÚBLICOS
                         .requestMatchers("/api/auth/**", "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html", "/error").permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/usuarios").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/herramientas/**").permitAll()
 
-                        // 2. RESERVAS - AJUSTE DE PRIORIDAD
-                        // Ponemos la ruta del proveedor primero para asegurar que no se confunda con /api/reservas/**
-                        .requestMatchers("/api/reservas/proveedor/**").hasAnyRole("PROVEEDOR", "ADMINISTRADOR")
-                        .requestMatchers("/api/reservas/mis-reservas/**").hasAnyRole("CLIENTE", "ADMINISTRADOR")
-                        .requestMatchers("/api/reservas/cliente/**").hasAnyRole("CLIENTE", "ADMINISTRADOR")
+                        // 2. ADMINISTRACIÓN (Uso de hasAnyAuthority para evitar problemas de prefijo ROLE_)
+                        // Esto permite que funcione tanto si el token trae "ADMINISTRADOR" como "ROLE_ADMINISTRADOR"
+                        .requestMatchers("/api/admin/**").hasAnyAuthority("ROLE_ADMINISTRADOR", "ADMINISTRADOR")
+                        .requestMatchers(HttpMethod.GET, "/api/usuarios").hasAnyAuthority("ROLE_ADMINISTRADOR", "ADMINISTRADOR")
+                        .requestMatchers("/api/usuarios/**").hasAnyAuthority("ROLE_ADMINISTRADOR", "ADMINISTRADOR")
 
-                        // Operaciones específicas
-                        .requestMatchers(HttpMethod.PATCH, "/api/reservas/*/devolucion").hasAnyRole("PROVEEDOR", "ADMINISTRADOR")
-                        .requestMatchers(HttpMethod.POST, "/api/reservas/**").hasAnyRole("CLIENTE", "ADMINISTRADOR")
+                        // 3. RESERVAS
+                        .requestMatchers("/api/reservas/proveedor/**").hasAnyAuthority("ROLE_PROVEEDOR", "PROVEEDOR", "ROLE_ADMINISTRADOR", "ADMINISTRADOR")
+                        .requestMatchers("/api/reservas/mis-reservas/**").hasAnyAuthority("ROLE_CLIENTE", "CLIENTE", "ROLE_ADMINISTRADOR", "ADMINISTRADOR")
+                        .requestMatchers("/api/reservas/cliente/**").hasAnyAuthority("ROLE_CLIENTE", "CLIENTE", "ROLE_ADMINISTRADOR", "ADMINISTRADOR")
 
-                        // 3. HERRAMIENTAS - ESCRITURA
-                        .requestMatchers(HttpMethod.POST, "/api/herramientas/**").hasAnyRole("PROVEEDOR", "ADMINISTRADOR")
-                        .requestMatchers(HttpMethod.PUT, "/api/herramientas/**").hasAnyRole("PROVEEDOR", "ADMINISTRADOR")
-                        .requestMatchers(HttpMethod.DELETE, "/api/herramientas/**").hasAnyRole("PROVEEDOR", "ADMINISTRADOR")
+                        // 4. HERRAMIENTAS - ESCRITURA
+                        .requestMatchers(HttpMethod.POST, "/api/herramientas/**").hasAnyAuthority("ROLE_PROVEEDOR", "PROVEEDOR", "ROLE_ADMINISTRADOR", "ADMINISTRADOR")
+                        .requestMatchers(HttpMethod.PUT, "/api/herramientas/**").hasAnyAuthority("ROLE_PROVEEDOR", "PROVEEDOR", "ROLE_ADMINISTRADOR", "ADMINISTRADOR")
+                        .requestMatchers(HttpMethod.DELETE, "/api/herramientas/**").hasAnyAuthority("ROLE_PROVEEDOR", "PROVEEDOR", "ROLE_ADMINISTRADOR", "ADMINISTRADOR")
 
-                        // 4. ADMIN Y USUARIOS
-                        .requestMatchers("/api/admin/**").hasRole("ADMINISTRADOR")
-                        .requestMatchers("/api/usuarios/**").hasRole("ADMINISTRADOR")
-
-                        // 5. REGLA GENERAL PARA RESERVAS Y EL RESTO
-                        .requestMatchers("/api/reservas/**").authenticated()
+                        // 5. REGLA GENERAL
                         .anyRequest().authenticated()
                 );
 
@@ -90,10 +86,15 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        // Agregamos '*' temporalmente si sigues teniendo problemas de CORS, o mantén tus puertos
-        config.setAllowedOrigins(Arrays.asList("http://localhost:5500", "http://127.0.0.1:5500", "http://localhost:3000", "http://localhost:4200"));
+        // Agregamos orígenes comunes de Live Server y puertos de frameworks
+        config.setAllowedOrigins(Arrays.asList(
+                "http://localhost:5500",
+                "http://127.0.0.1:5500",
+                "http://localhost:3000",
+                "http://localhost:8080"
+        ));
         config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
-        config.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Accept"));
+        config.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Accept", "X-Requested-With"));
         config.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();

@@ -23,4 +23,12 @@ public class UsuarioService {
     public List<Usuario> obtenerTodos() {
         return usuarioRepositorio.findAll();
     }
+
+    // --- NUEVO MÉTODO PARA EL ADMINISTRADOR ---
+    public void eliminar(Long id) {
+        if (!usuarioRepositorio.existsById(id)) {
+            throw new RuntimeException("El usuario con ID " + id + " no existe.");
+        }
+        usuarioRepositorio.deleteById(id);
+    }
 }
