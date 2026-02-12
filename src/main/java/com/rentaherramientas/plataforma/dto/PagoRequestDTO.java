@@ -9,4 +9,5 @@ public class PagoRequestDTO {
     private String numeroTarjeta;
     private String cvv;
     private String nombreTitular;
+    private BigDecimal monto; // <--- AGREGA ESTA LÍNEA
 }

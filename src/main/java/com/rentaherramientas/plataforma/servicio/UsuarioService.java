@@ -13,6 +13,9 @@ public class UsuarioService {
     @Autowired private BCryptPasswordEncoder passwordEncoder;
 
     public Usuario registrar(Usuario usuario) {
+        if (usuarioRepositorio.findByCorreo(usuario.getCorreo()).isPresent()) {
+            throw new RuntimeException("El correo ya está registrado.");
+        }
         usuario.setContrasena(passwordEncoder.encode(usuario.getContrasena()));
         return usuarioRepositorio.save(usuario);
     }

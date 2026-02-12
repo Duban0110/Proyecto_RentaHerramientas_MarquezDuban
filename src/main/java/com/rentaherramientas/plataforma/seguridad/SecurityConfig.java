@@ -39,35 +39,40 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // 1. Rutas Públicas
+                        // 1. Rutas Públicas y Swagger
                         .requestMatchers(
                                 "/v3/api-docs/**",
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",
-                                "/api/auth/**",
-                                "/api/usuarios/registro"
+                                "/api/auth/**"
                         ).permitAll()
 
-                        // Permitir OPTIONS para CORS (Pre-flight requests)
+                        // PERMITIR REGISTRO
+                        .requestMatchers(HttpMethod.POST, "/api/usuarios").permitAll()
+
+                        // Permitir OPTIONS para evitar errores de CORS pre-flight
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
-                        // 2. Reportes de Admin (Primero lo más específico)
+                        // 2. Reportes de Admin
                         .requestMatchers("/api/admin/reportes/**").hasAnyAuthority("ADMINISTRADOR", "ROLE_ADMINISTRADOR")
 
-                        // 3. Gestión de Usuarios (Solo Admin)
+                        // 3. Gestión de Usuarios (Admin solamente)
+                        .requestMatchers(HttpMethod.GET, "/api/usuarios").hasAnyAuthority("ADMINISTRADOR", "ROLE_ADMINISTRADOR")
                         .requestMatchers("/api/usuarios/**").hasAnyAuthority("ADMINISTRADOR", "ROLE_ADMINISTRADOR")
 
-                        // 4. Reservas (Ambos roles)
-                        .requestMatchers("/api/reservas/**").hasAnyAuthority("CLIENTE", "ADMINISTRADOR", "ROLE_CLIENTE", "ROLE_ADMINISTRADOR")
+                        // 4. HERRAMIENTAS (Configuración específica para evitar el 403)
+                        // El GET es público o para todos los autenticados
+                        .requestMatchers(HttpMethod.GET, "/api/herramientas/**").permitAll()
+                        // El POST solo para Proveedor y Admin
+                        .requestMatchers(HttpMethod.POST, "/api/herramientas/**").hasAnyAuthority("PROVEEDOR", "ROLE_PROVEEDOR", "ADMINISTRADOR", "ROLE_ADMINISTRADOR")
 
-                        // 5. Herramientas (Cualquiera autenticado)
-                        .requestMatchers("/api/herramientas/**").authenticated()
+                        // 5. Reservas (Clientes y Admin)
+                        .requestMatchers("/api/reservas/**").hasAnyAuthority("CLIENTE", "ROLE_CLIENTE", "ADMINISTRADOR", "ROLE_ADMINISTRADOR")
 
-                        // 6. Resto
+                        // 6. Resto de peticiones deben estar autenticadas
                         .anyRequest().authenticated()
                 );
 
-        // Añadimos el filtro JWT
         http.addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
@@ -76,14 +81,15 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        // Permitir múltiples orígenes de desarrollo
-        configuration.setAllowedOriginPatterns(List.of(
-                "http://localhost:*",
-                "http://127.0.0.1:*",
-                "http://*.127.0.0.1:*"
+        // Permitir orígenes de desarrollo (Live Server de VS Code y otros)
+        configuration.setAllowedOrigins(Arrays.asList(
+                "http://localhost:5500",
+                "http://127.0.0.1:5500",
+                "http://localhost:3000"
         ));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
-        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Cache-Control", "X-Requested-With"));
+        // Se agregaron headers comunes para evitar bloqueos
+        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Cache-Control", "X-Requested-With", "Accept", "Origin"));
         configuration.setAllowCredentials(true);
         configuration.setExposedHeaders(List.of("Authorization"));
 
