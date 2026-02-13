@@ -80,7 +80,7 @@ Herramientas
 Reservas
 
     POST /api/reservas - Crea una solicitud de alquiler.
-    {
+{
   "herramientaId": 5,
   "fechaInicio": "2026-02-15",
   "fechaFin": "2026-02-20"
