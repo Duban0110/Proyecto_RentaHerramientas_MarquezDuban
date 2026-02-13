@@ -1,5 +1,7 @@
 Rentatools - Plataforma de Alquiler de Herramientas
 
+🔗 **Repositorio del Backend:** [Herramientas-Frontend](https://github.com/Duban0110/Herramientas-Frontend.git)
+
 Rentatools es una solución integral diseñada para digitalizar y optimizar el proceso de alquiler de maquinaria pesada y herramientas de construcción. La plataforma conecta a proveedores de equipos con clientes finales, garantizando la trazabilidad, seguridad financiera y control de inventario en tiempo real.
 
 Tecnologías Utilizadas
