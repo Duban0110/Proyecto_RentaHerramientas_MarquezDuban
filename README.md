@@ -1,39 +1,95 @@
+Rentatools - Plataforma de Alquiler de Herramientas
 
-El proyecto utiliza una base de datos MySQL llamada `renta_herramientas`. Las tablas principales son:
+Rentatools es una solución integral diseñada para digitalizar y optimizar el proceso de alquiler de maquinaria pesada y herramientas de construcción. La plataforma conecta a proveedores de equipos con clientes finales, garantizando la trazabilidad, seguridad financiera y control de inventario en tiempo real.
 
-1.  **usuarios:** Centraliza credenciales y roles.
-2.  **herramientas:** Almacena el catálogo vinculado a cada proveedor.
-3.  **reservas:** Gestiona el flujo de alquiler (fechas, estados y montos).
-4.  **pagos:** Registro de transacciones vinculadas a las reservas.
+Tecnologías Utilizadas
+
+    Lenguaje: Java 17+
+
+    Framework: Spring Boot 3.x
+
+    Base de Datos: MySQL 8.0
+
+    Seguridad: Spring Security & JWT (JSON Web Tokens)
+
+    Persistencia: Spring Data JPA
+
+    Documentación: Swagger / OpenAPI 3.0
+
+    Herramientas de Gestión: Trello (Tablero Kanban)
 
 
+🛠️ Instalación y Configuración
+1. Requisitos Previos
 
----
+    JDK 17 o superior.
 
-## ⚙️ Configuración e Instalación
+    Maven 3.6+.
 
-### 1. Requisitos
-* JDK 17 o superior.
-* Maven 3.6+.
-* Instancia de MySQL corriendo.
+    Servidor MySQL activo.
 
-### 2. Configuración de la Base de Datos
-Crea la base de datos y las tablas utilizando el script SQL incluido en la carpeta `/scripts` (o los proporcionados en la documentación del proyecto). Asegúrate de configurar tus credenciales en el archivo `src/main/resources/application.properties`:
+2. Clonar el repositorio
+   git clone https://github.com/tu-usuario/rentatools.git
+   cd rentatools
+   
+3. Configuración del entorno (application.properties)
 
-properties
-spring.datasource.url=jdbc:mysql://localhost:3306/renta_herramientas
-spring.datasource.username=TU_USUARIO
-spring.datasource.password=TU_CONTRASEÑA
+Crea o edita el archivo src/main/resources/application.properties con los siguientes datos:
+# Configuración de la Base de Datos
+spring.datasource.url=jdbc:mysql://localhost:3306/rentatools_db?createDatabaseIfNotExist=true
+spring.datasource.username=tu_usuario
+spring.datasource.password=tu_contraseña
 spring.jpa.hibernate.ddl-auto=update
 
-### 3. Ejecución
-Clona el repositorio y ejecuta:
+# Configuración de Seguridad (JWT)
+jwt.secret.key=TuClaveSecretaMuyLargaParaSeguridadDe6Dias
+jwt.expiration.time=86400000
 
-Bash
-mvn spring-boot:run
-El servidor iniciará por defecto en: http://localhost:8081
+# Puerto del servidor
+server.port=8080
 
-📑 Endpoints Principales (API)MétodoEndpointDescripciónPOST/api/auth/loginLogin y obtención de Token JWT.GET/api/herramientasListado del catálogo (Público/Cliente).POST/api/reservasCreación de nueva reserva (Cliente).GET/api/admin/reportes/resumenEstadísticas globales (Solo Admin).POST/api/reservas/pagar/descargarGeneración de factura PDF.
+Arquitectura de Datos
 
-👨‍💻 Autor
-Duban - Duban0110
+El sistema utiliza un modelo relacional normalizado para garantizar la integridad de las transacciones y la gestión de stock.
+
+Autenticación y Roles
+
+El sistema implementa seguridad basada en roles (RBAC) mediante Spring Security:
+
+    CLIENTE: Puede buscar herramientas, realizar reservas y gestionar su historial de pagos.
+
+    PROVEEDOR: Puede gestionar su propio inventario (CRUD de herramientas) y procesar devoluciones.
+
+    ADMIN: Acceso total a reportes financieros y gestión de categorías maestras.
+
+Endpoints Principales (API)
+Autenticación
+
+    POST /api/auth/login
+
+        Request: {"email": "admin@rentatools.com", "password": "123"}
+
+        Response: {"token": "eyJhbG...", "role": "ADMIN"}
+
+Herramientas
+
+    GET /api/herramientas - Lista el catálogo completo.
+
+    POST /api/herramientas - (Solo Proveedor) Registra nuevo equipo.
+
+Reservas
+
+    POST /api/reservas - Crea una solicitud de alquiler.
+    {
+  "herramientaId": 5,
+  "fechaInicio": "2026-02-15",
+  "fechaFin": "2026-02-20"
+    }
+
+Pruebas
+
+Para ejecutar las pruebas unitarias y de integración desarrolladas durante el sprint:
+mvn test
+
+AUTOR
+Duban Marquez 
