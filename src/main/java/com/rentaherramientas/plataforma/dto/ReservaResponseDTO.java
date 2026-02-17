@@ -4,7 +4,7 @@ import lombok.Data;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
-@Data // Esto genera automáticamente el método setObservaciones
+@Data
 public class ReservaResponseDTO {
     private Long id;
     private String nombreCliente;
@@ -14,7 +14,7 @@ public class ReservaResponseDTO {
     private BigDecimal total;
     private String estado;
 
-    // Estos campos deben existir para que el Service no falle
+
     private String observaciones;
     private BigDecimal cargosAdicionales;
 }

@@ -1,4 +1,4 @@
-package com.rentaherramientas.plataforma.dto; // O el paquete que prefieras
+package com.rentaherramientas.plataforma.dto;
 
 public interface EstadisticaHerramienta {
     String getHerramienta();

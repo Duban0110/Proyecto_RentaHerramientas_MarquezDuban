@@ -55,18 +55,13 @@ public class JwtUtil {
 
     // --- NUEVOS MÉTODOS Y ACTUALIZACIONES ---
 
-    /**
-     * Extrae los roles del token.
-     * Este es el método que tu JwtRequestFilter necesita.
-     */
+
     public List<String> extractRoles(String token) {
         return extractClaim(token, claims -> claims.get("roles", List.class));
     }
 
-    /**
-     * Extrae el ID del usuario que guardamos en el token.
-     * Útil si necesitas el ID directamente en el backend.
-     */
+
+    // Extrae el ID del usuario que guardamos en el token.
     public Long extractUserId(String token) {
         return extractClaim(token, claims -> claims.get("id", Long.class));
     }

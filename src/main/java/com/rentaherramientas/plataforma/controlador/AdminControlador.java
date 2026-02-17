@@ -47,7 +47,7 @@ public class AdminControlador {
             respuesta.put("gananciasTotales", 0.0);
         }
 
-        // Estos conteos rara vez fallan
+        // Datos vistos por al admin en el dashboard
         respuesta.put("totalHerramientas", herramientaRepositorio.count());
         respuesta.put("totalReservas", reservaRepositorio.count());
         respuesta.put("totalUsuarios", usuarioRepositorio.count());

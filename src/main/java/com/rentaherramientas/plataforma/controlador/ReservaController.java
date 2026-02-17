@@ -1,10 +1,12 @@
 package com.rentaherramientas.plataforma.controlador;
 
 import com.rentaherramientas.plataforma.dto.*;
+import com.rentaherramientas.plataforma.entidad.Reserva;
 import com.rentaherramientas.plataforma.servicio.ReservaService;
 import com.rentaherramientas.plataforma.seguridad.JwtUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -13,6 +15,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -84,7 +87,7 @@ public class ReservaController {
         }
     }
 
-    // --- EL MÉTODO QUE FALTABA ---
+
     private String obtenerCorreo(String token, UserDetails userDetails) {
         if (userDetails != null) return userDetails.getUsername();
         if (token != null && token.startsWith("Bearer ")) {
@@ -92,4 +95,24 @@ public class ReservaController {
         }
         throw new RuntimeException("Usuario no identificado");
     }
+
+    // --- EXAMEN FINAL ---
+
+    @GetMapping("/filtrar")
+    public ResponseEntity<List<Reserva>>
+    filtrarPorFechas(
+            @RequestParam(required = false)
+    @DateTimeFormat(iso =
+    DateTimeFormat.ISO.DATE) LocalDate
+    fechaInicio,
+            @RequestParam(required = false)
+    @DateTimeFormat(iso =
+    DateTimeFormat.ISO.DATE) LocalDate
+    fechaFin) {
+        List<Reserva> filtradas =
+                reservaService.filtrarReservas(fechaInicio,fechaFin);
+        return ResponseEntity.ok(filtradas);
+    }
+
+
 }

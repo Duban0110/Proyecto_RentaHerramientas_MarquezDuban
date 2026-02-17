@@ -44,7 +44,7 @@ public class UsuarioController {
     @PreAuthorize("hasAnyAuthority('ADMINISTRADOR', 'ROLE_ADMINISTRADOR')")
     public ResponseEntity<?> eliminar(@PathVariable Long id) {
         try {
-            usuarioService.eliminar(id); // Asegúrate de tener este método en tu UsuarioService
+            usuarioService.eliminar(id);
             return ResponseEntity.ok().build();
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("No se pudo eliminar el usuario");

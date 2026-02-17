@@ -29,7 +29,6 @@ public class Reserva {
     @Enumerated(EnumType.STRING)
     private EstadoReserva estado;
 
-    // --- NUEVOS CAMPOS PARA CUMPLIR REQUERIMIENTOS ---
     @Column(length = 500)
     private String observacionesDevolucion;
 

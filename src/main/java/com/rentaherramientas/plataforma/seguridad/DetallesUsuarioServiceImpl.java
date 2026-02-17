@@ -16,11 +16,11 @@ public class DetallesUsuarioServiceImpl implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String correoInput) throws UsernameNotFoundException {
-        // 1. Buscamos al usuario por correo
+        // Buscamos al usuario por correo
         Usuario usuario = usuarioRepositorio.findByCorreo(correoInput)
                 .orElseThrow(() -> new UsernameNotFoundException("No existe usuario con correo: " + correoInput));
 
-        // 2. RETORNO CLAVE: Usamos tu clase personalizada DetallesUsuarioImpl
+        // se usa la clase personalizada DetallesUsuarioImpl
         // Esto soluciona el Error 500 porque unifica el tipo de objeto en Swagger
         return new DetallesUsuarioImpl(usuario);
     }

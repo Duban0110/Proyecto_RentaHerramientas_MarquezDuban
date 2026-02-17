@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.io.ByteArrayOutputStream;
 import java.math.BigDecimal;
 import java.awt.Color;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
@@ -44,6 +45,17 @@ public class ReservaService {
 
     public List<EstadisticaHerramientaDTO> obtenerEstadisticasHerramientas() {
         return reservaRepositorio.obtenerHerramientasMasPopulares();
+    }
+
+
+    // --- FUNCIONALIDAD AGG PARA EL EXAMEN FINAL ---
+    public List<Reserva> filtrarReservas(LocalDate inicio, LocalDate fin) {
+        if (inicio == null || fin == null) {
+            return
+        reservaRepositorio.findAll();
+        }
+        return
+        reservaRepositorio.findByFechaInicioBetween(inicio, fin);
     }
 
     // --- GESTIÓN DE RESERVAS ---
@@ -152,7 +164,7 @@ public class ReservaService {
             PdfWriter.getInstance(documento, salida);
             documento.open();
 
-            // --- DISEÑO DEL PDF (Tu código actual) ---
+            // --- DISEÑO DEL PDF ---
             Font fuenteTitulo = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 20, Color.DARK_GRAY);
             Font fuenteSubtitulo = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 12);
             Font fuenteCuerpo = FontFactory.getFont(FontFactory.HELVETICA, 11);

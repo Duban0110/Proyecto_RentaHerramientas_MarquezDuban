@@ -31,7 +31,7 @@ public class Herramienta {
     @Column(nullable = false)
     private Boolean disponible = true;
 
-    // --- CAMPO ACTUALIZADO PARA SOPORTAR BASE64 PESADOS ---
+
     @Lob
     @Column(name = "imagen_url", columnDefinition = "LONGTEXT")
     private String imagenUrl;
@@ -40,7 +40,7 @@ public class Herramienta {
     @JoinColumn(name = "proveedor_id")
     private Usuario proveedor;
 
-    // --- MÉTODOS DE LÓGICA DE NEGOCIO ---
+
 
     public void reducirStock() {
         if (this.stock > 0) {

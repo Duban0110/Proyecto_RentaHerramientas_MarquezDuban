@@ -11,6 +11,6 @@ public class HerramientaDTO {
     private BigDecimal precioDia;
     private Integer stock;
     private Boolean disponible;
-    private String imagenUrl; // <--- NUEVO CAMPO
+    private String imagenUrl;
     private String nombreProveedor;
 }

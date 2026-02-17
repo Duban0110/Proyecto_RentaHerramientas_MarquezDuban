@@ -15,7 +15,7 @@ public class DetallesUsuarioImpl implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        // Al ser Enum, usamos .name() para obtener "ADMINISTRADOR", etc.
+        // Al ser Enum, usamos .name() para obtener "ADMINISTRADOR"
         return Collections.singleton(new SimpleGrantedAuthority(usuario.getRol().name()));
     }
 
